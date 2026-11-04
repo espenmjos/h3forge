@@ -90,7 +90,7 @@ C:\GOG Games\HoMM 3 Complete\Data
 ```
 
 If you installed the game somewhere else, use `<your Heroes 3 folder>\Data`. The folder is the
-one that contains `HotA.exe` (or `h3hota HD.exe`).
+one that contains `HotA_launcher.exe` and `h3hota HD.exe`.
 
 1. Unzip the download.
 2. Back up any files in `Data` with the same names.
@@ -106,7 +106,7 @@ can pack the portraits into a `.lod` archive with
 | Problem | Cause and fix |
 | --- | --- |
 | Portrait shows random colours | You used a standard 24-bit image. Use the **PCX 8-bit** files. |
-| Portrait does not change | The file name does not match the hero, or the files are in the wrong folder. Check that they are in the `Data` folder next to `HotA.exe`. |
+| Portrait does not change | The file name does not match the hero, or the files are in the wrong folder. Check that they are in the `Data` folder next to `HotA_launcher.exe`. |
 | A HotA hero's small portrait does not change | Small file names for HotA heroes are derived, and Bulwark names are not published yet. Look up the real names in `HotA.lod` with MMArchive and type them into the name fields. |
 | Other players see the original portrait | Custom portraits are local to your install. Share the files with them. |
 
