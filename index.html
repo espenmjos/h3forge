@@ -200,8 +200,8 @@ details ul { padding-left: 20px; margin: 6px 0; }
             <li>Large portraits are 58×64 px (HPL…), small ones 48×32 px (HPS…), PCX with at most 256 colours.</li>
             <li>The 8-bit files never use palette entry 0. The game can treat that colour specially, so leaving it unused avoids graphic glitches.</li>
             <li>Hero list follows HotA 1.8.1 (with Cove, Factory and Bulwark). File names for the 156 original heroes are confirmed. For HotA heroes the large name is confirmed but the small name is derived from it, and Bulwark names are not published yet. Check them against HotA.lod with MMArchive and edit the fields if needed.</li>
-            <li>Use the 8-bit PCX. Tested: dropping it into <span class="mono">Heroes3\Data</span> works. A standard 24-bit PCX shows up as random colours, because the game reads portraits as 256-colour images. The experimental option writes true colour in the game's own .pcx layout. It is untested, so back up your 8-bit files before you try it.</li>
-            <li>The files are named after the hero portrait you replace; put them in <span class="mono">Heroes3\Data</span> or pack them into a .lod with a tool such as MMArchive.</li>
+            <li>Use the 8-bit PCX. Tested: dropping it into <span class="mono">HoMM 3 Complete\Data</span> works. A standard 24-bit PCX shows up as random colours, because the game reads portraits as 256-colour images. The experimental option writes true colour in the game's own .pcx layout. It is untested, so back up your 8-bit files before you try it.</li>
+            <li>The files are named after the hero portrait you replace; put them in <span class="mono">HoMM 3 Complete\Data</span> or pack them into a .lod with a tool such as MMArchive.</li>
             <li>Check how your HotA version loads custom resources before shipping a map to other players: they need the same files installed.</li>
           </ul>
         </details>
@@ -522,7 +522,7 @@ details ul { padding-left: 20px; margin: 6px 0; }
       if (want24) files.push({ name: `experimental-h3-24bit/${base}.pcx`, data: h3pcx24(r.w, r.h, r.rgb) });
       if (wantPng) files.push({ name: `png/${base}.png`, data: await canvasToPng(r.canvas) });
     }
-    const readme = `HotA Portrait Forge output\n\nHero: ${sel.value === "custom" ? "custom" : HEROES[+sel.value][0]}\n${n.L}: large portrait 58x64\n${n.S}: small portrait 48x32\n\npcx-8bit:  256-colour PCX, palette entry 0 unused. Tested: works dropped into Heroes3\\Data.\npng:       lossless masters for editing or converting yourself.\nexperimental-h3-24bit (if included): true colour in the game's own .pcx layout.\n   UNTESTED. Same file names as pcx-8bit, so copying it overwrites the 8-bit files. Back them up first.\n`;
+    const readme = `HotA Portrait Forge output\n\nHero: ${sel.value === "custom" ? "custom" : HEROES[+sel.value][0]}\n${n.L}: large portrait 58x64\n${n.S}: small portrait 48x32\n\npcx-8bit:  256-colour PCX, palette entry 0 unused. Tested: works dropped into HoMM 3 Complete\\Data.\npng:       lossless masters for editing or converting yourself.\nexperimental-h3-24bit (if included): true colour in the game's own .pcx layout.\n   UNTESTED. Same file names as pcx-8bit, so copying it overwrites the 8-bit files. Back them up first.\n`;
     files.push({ name: "README.txt", data: new TextEncoder().encode(readme) });
     return files;
   }

@@ -1,97 +1,142 @@
 # HotA Portrait Forge
 
-A single-page tool that turns any picture into hero portraits for
-**Heroes of Might and Magic III: Horn of the Abyss**. You frame the image, check it at real
-game size, and download PCX files that the game can load.
+[![Open the app](https://img.shields.io/badge/open-the%20app-9a6a12?style=flat-square)](https://espenmjos.github.io/h3forge/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-3f6b2a?style=flat-square)](LICENSE)
 
-Everything runs in the browser. Nothing is uploaded anywhere; the only network request is for
-the Google Fonts used by the page (it works without them, just with fallback fonts).
+Turn any picture into hero portraits for **Heroes of Might and Magic III: Horn of the Abyss**.
+Frame the image, check it at real game size, and download portrait files the game loads as-is.
 
-## Opening it
+**Use it online: <https://espenmjos.github.io/h3forge/>**
 
-**Online:** https://espenmjos.github.io/h3forge/ (works on PC and phone).
+![HotA Portrait Forge](docs/screenshot.png)
 
-Or offline:
+## Features
 
-- **PC:** download `index.html` and double-click it, or open it in any modern browser
-  (Chrome, Edge, Firefox).
-- **Phone:** open the file in the phone's browser. On a phone you also get a
-  **Take a selfie** button that opens the camera.
+- **Large and small portraits**: 58×64 for the hero screen and 48×32 for the adventure-map hero bar,
+  each framed separately.
+- **True in-game preview**: see the 256-colour result at 1× and 2× before you export.
+- **Optional dithering** for smoother gradients on photos.
+- **Full HotA 1.8.1 hero list**, including Cove, Factory and Bulwark, with the correct file names
+  filled in for you.
+- **Game-ready output**: 8-bit PCX tested in game, plus PNG masters, in one ZIP.
+- **Private by design**: everything runs in your browser. Images never leave your device.
+- **Works anywhere**: desktop or phone, online or as a single offline HTML file. Nothing to install.
 
-No install, server or build step is needed.
+## Quick start
 
-## Making a portrait
+1. Open the [app](https://espenmjos.github.io/h3forge/).
+2. Upload, drop or paste an image (or take a selfie on a phone).
+3. Frame the **Large** and **Small** portraits.
+4. Pick the hero to replace and click **Generate files**, then **Download ZIP**.
+5. Copy the `.pcx` files into the game's `Data` folder (see [Installing](#installing-the-portraits)).
+
+## Step-by-step guide
 
 ### 1. Frame your hero
 
-1. Load an image in one of these ways:
-   - click **Upload an image**,
-   - drag and drop a file onto the box,
-   - paste an image from the clipboard (Ctrl+V, or the paste box on phones),
-   - on a phone, use **Take a selfie**.
+Load an image in one of these ways:
 
-   PNG, JPG, WebP, GIF and BMP are supported. The page opens with a sample image so you can
-   try the controls first.
-2. Pick the tab for the size you are framing:
-   - **Large 58×64**: the portrait on the hero screen,
-   - **Small 48×32**: the portrait in the adventure-map hero bar.
+- click **Upload an image**,
+- drag and drop a file onto the box,
+- paste an image from the clipboard (Ctrl+V, or the paste box on phones),
+- on a phone, tap **Take a selfie**.
 
-   Each size is framed separately, so set **both** tabs.
-3. Move and zoom:
-   - drag to move,
-   - scroll, pinch or use the **Zoom** slider to zoom (`+` / `-` also work),
-   - arrow keys nudge by one game pixel,
-   - **Reset framing** goes back to the default crop.
-4. **Use the same image for both sizes** is on by default. Turn it off if you want a different
-   picture for the small portrait (for example a tighter crop of the face).
+PNG, JPG, WebP, GIF and BMP are supported. The page opens with a sample so you can try the
+controls first.
 
-Want a selfie on a PC? The page cannot use a webcam directly. Take a photo with the Windows
-Camera app and upload it, or open the page on your phone instead.
+Use the **Large 58×64** and **Small 48×32** tabs to frame each size. Each size has its own
+framing, so set both.
+
+| Action | Mouse / touch | Keyboard |
+| --- | --- | --- |
+| Move | Drag | Arrow keys (one game pixel) |
+| Zoom | Scroll, pinch or the **Zoom** slider | `+` / `-` |
+| Start over | **Reset framing** | |
+
+**Use the same image for both sizes** is on by default. Turn it off to use a different picture
+for the small portrait, for example a tighter crop of the face.
+
+No webcam support on PC: take a photo with the Windows Camera app and upload it, or use the
+selfie button on your phone.
 
 ### 2. Check the in-game preview
 
-The right-hand panel shows both portraits as they will look in the game: reduced to 256
-colours, at 1× and 2×.
-
-**Dithering** mixes neighbouring colours so gradients look smoother instead of blotchy. Try
-it on photos with soft lighting. It only affects the 8-bit PCX output.
+The preview panel shows both portraits reduced to the game's 256 colours, at 1× and 2×.
+**Dithering** mixes neighbouring colours so soft gradients look smoother instead of blotchy.
+It only affects the 8-bit PCX.
 
 ### 3. Generate and download
 
-1. **Hero to replace:** search for and pick the hero whose portrait you want to replace. The
-   file names (for example `HPL000KN.pcx` and `HPS000KN.pcx`) fill in automatically. You can
-   edit them by hand if needed.
-2. **Formats** (PCX 8-bit and PNG are ticked by default):
-   - **PCX 8-bit, 256 colours**: the one to use, tested in game,
-   - **PNG**: in case you want to convert the images yourself,
-   - **Experimental: H3 native 24-bit**: untested, keep a backup.
-3. **1 px black border on the small portrait** matches the look of the original small
-   portraits. It is on by default.
+1. **Hero to replace**: search by name, town or class. The file names (for example
+   `HPL000KN.pcx` and `HPS000KN.pcx`) fill in automatically and can be edited by hand.
+2. **Formats**:
+
+   | Format | Default | Use |
+   | --- | --- | --- |
+   | PCX 8-bit, 256 colours | On | The files the game uses. Tested in game. |
+   | PNG | On | Lossless masters for editing or converting yourself. |
+   | H3 native 24-bit (experimental) | Off | Untested. Same file names as the 8-bit PCX, so back those up first. |
+
+3. **1 px black border on the small portrait** matches the original small portraits. On by default.
 4. Click **Generate files**, then **Download ZIP**.
 
-## Installing the portraits in the game
+## Installing the portraits
+
+HotA installs into your existing *Heroes of Might and Magic III: Complete* folder, so the
+portraits go into that folder's `Data` subfolder. With the GOG version this is by default:
+
+```
+C:\GOG Games\HoMM 3 Complete\Data
+```
+
+If you installed the game somewhere else, use `<your Heroes 3 folder>\Data`. The folder is the
+one that contains `HotA.exe` (or `h3hota HD.exe`).
 
 1. Unzip the download.
-2. Copy the `.pcx` files into the game's `Data` folder, for example
-   `C:\Games\Heroes3\Data`. Back up any files with the same names first.
-3. Start the game. The chosen hero now uses your portrait.
+2. Back up any files in `Data` with the same names.
+3. Copy the `.pcx` files into `Data`.
+4. Start HotA. The chosen hero now uses your portrait.
 
-Instead of loose files you can also pack them into a `.lod` archive with a tool such as
+To undo, delete the files again (or restore your backup). As an alternative to loose files, you
+can pack the portraits into a `.lod` archive with
 [MMArchive](https://sites.google.com/site/sergroj/mm/mmarchive).
 
-To remove the custom portrait, delete the files from `Data` again.
+## Troubleshooting
 
-## Good to know
+| Problem | Cause and fix |
+| --- | --- |
+| Portrait shows random colours | You used a standard 24-bit image. Use the **PCX 8-bit** files. |
+| Portrait does not change | The file name does not match the hero, or the files are in the wrong folder. Check that they are in the `Data` folder next to `HotA.exe`. |
+| A HotA hero's small portrait does not change | Small file names for HotA heroes are derived, and Bulwark names are not published yet. Look up the real names in `HotA.lod` with MMArchive and type them into the name fields. |
+| Other players see the original portrait | Custom portraits are local to your install. Share the files with them. |
 
-- Large portraits are 58×64 px (`HPL…`), small ones 48×32 px (`HPS…`). Both are PCX with at
-  most 256 colours.
-- Use the **8-bit PCX**. A standard 24-bit PCX shows up as random colours, because the game
-  reads portraits as 256-colour images.
-- The 8-bit files never use palette entry 0. The game can treat that colour specially, so
-  leaving it unused avoids graphic glitches.
-- The hero list follows HotA 1.8.1 (including Cove, Factory and Bulwark). File names for the
-  156 original heroes are confirmed. For HotA heroes the large file name is confirmed but the
-  small name is derived from it, and Bulwark names are not published yet. If a portrait does
-  not show up, check the real names in `HotA.lod` with MMArchive and edit the name fields.
-- Custom portraits are local to your install. If you share a map that relies on them, the
-  other players need the same files in their `Data` folder.
+## Technical notes
+
+- Large portraits are 58×64 px (`HPL…`), small ones 48×32 px (`HPS…`). Both are PCX with at most
+  256 colours.
+- The 8-bit files never use palette entry 0. The game can treat that colour specially, so leaving
+  it unused avoids graphic glitches.
+- File names for the 156 original heroes are confirmed. For HotA heroes the large name is
+  confirmed and the small name is derived from it.
+- The whole app is one self-contained file, [`index.html`](index.html), with no build step and no
+  dependencies besides optional web fonts.
+
+## Running offline
+
+Download [`index.html`](https://raw.githubusercontent.com/espenmjos/h3forge/main/index.html)
+(right-click, *Save link as*) and open it in any modern browser. It works without an internet
+connection, using fallback fonts.
+
+## Contributing
+
+Bug reports and corrections, especially verified HotA or Bulwark portrait file names, are welcome
+via [issues](https://github.com/espenmjos/h3forge/issues).
+
+## Disclaimer
+
+This is an unofficial fan tool. It is not affiliated with Ubisoft or the Horn of the Abyss team.
+Heroes of Might and Magic is a trademark of Ubisoft Entertainment.
+
+## License
+
+[MIT](LICENSE) © 2026 Espen Mjøs
