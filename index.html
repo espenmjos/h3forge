@@ -1,0 +1,659 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>HotA Portrait Forge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=Alegreya+Sans:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: workbench — editor canvas left, game-size previews + export right; stacks on phones */
+:root {
+  --bg: #efe6d4;
+  --panel: #f8f2e5;
+  --ink: #2a1d14;
+  --muted: #6d5a49;
+  --line: #d4c3a6;
+  --gold: #9a6a12;
+  --gold-ink: #fff8e6;
+  --well: #1b130d;
+  --ok: #3f6b2a;
+  --err: #a2321f;
+  --font-display: "IM Fell English SC", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-body: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17110c; --panel: #221912; --ink: #efe3cc; --muted: #b29f86; --line: #3d2e21;
+    --gold: #d9a53c; --gold-ink: #1d1409; --well: #0b0805; --ok: #8cc06b; --err: #e9785f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17110c; --panel: #221912; --ink: #efe3cc; --muted: #b29f86; --line: #3d2e21;
+  --gold: #d9a53c; --gold-ink: #1d1409; --well: #0b0805; --ok: #8cc06b; --err: #e9785f;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 16px; padding-block: 24px 48px; display: grid; gap: 24px; }
+header h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(30px, 5vw, 44px); line-height: 1.1; margin: 0; text-wrap: balance; }
+header p { margin: 6px 0 0; color: var(--muted); max-width: 62ch; }
+.grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+@media (max-width: 820px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 18px; display: grid; gap: 14px; min-width: 0; }
+h2 { font-family: var(--font-display); font-weight: 400; font-size: 22px; margin: 0; }
+.label { font-size: 12px; text-transform: uppercase; letter-spacing: .09em; color: var(--muted); font-weight: 700; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+button, .btn { font: inherit; font-weight: 700; border-radius: 4px; border: 1px solid var(--line); background: transparent; color: var(--ink); padding: 8px 14px; cursor: pointer; }
+button:hover { border-color: var(--gold); }
+button:focus-visible, input:focus-visible, canvas:focus-visible, label.drop:focus-within { outline: 2px solid var(--gold); outline-offset: 2px; }
+button.primary { background: var(--gold); color: var(--gold-ink); border-color: var(--gold); }
+button:disabled { opacity: .5; cursor: default; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; padding: 7px 12px; font-weight: 500; }
+.seg button[aria-pressed="true"] { background: var(--gold); color: var(--gold-ink); font-weight: 700; }
+label.drop { position: relative; display: grid; place-items: center; gap: 2px; text-align: center; border: 1.5px dashed var(--line); border-radius: 6px; padding: 14px; cursor: pointer; color: var(--muted); }
+label.drop strong { color: var(--ink); }
+label.drop.over { border-color: var(--gold); color: var(--ink); }
+label.drop input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 100px; }
+label.btn.selfie { position: relative; display: inline-flex; justify-content: center; align-items: center; justify-self: start; }
+label.btn.selfie:hover { border-color: var(--gold); }
+label.btn.selfie:focus-within { outline: 2px solid var(--gold); outline-offset: 2px; }
+.pc-only { display: none; }
+@media (hover: hover) and (pointer: fine) { label.btn.selfie, .phone-only { display: none; } .pc-only { display: block; } }
+label.btn.selfie input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.linkimg { display: flex; gap: 8px; align-items: baseline; font-weight: 500; }
+.srcinfo { margin: 0; font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.srcinfo b { color: var(--ink); font-weight: 700; }
+.srcinfo span { min-width: 0; overflow-wrap: anywhere; }
+.pastebox { font: inherit; font-size: 14px; width: 100%; min-height: 2.6em; resize: none; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; }
+.stage { background: var(--well); border-radius: 4px; display: grid; place-items: center; padding: 12px; }
+#editor { display: block; max-width: 100%; height: auto; touch-action: none; cursor: grab; image-rendering: auto; outline-offset: 4px; }
+#editor.dragging { cursor: grabbing; }
+.hint { font-size: 13px; color: var(--muted); margin: 0; }
+input[type=range] { width: 100%; accent-color: var(--gold); }
+.zoomrow { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
+.previews { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.pv { display: grid; gap: 6px; justify-items: start; }
+.pv .frame { background: var(--well); padding: 8px; border-radius: 4px; display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+.pv canvas { image-rendering: pixelated; display: block; }
+.pv code { font-family: var(--font-mono); font-size: 12px; }
+.mono { font-family: var(--font-mono); font-size: 13px; }
+.field { display: grid; gap: 4px; }
+.field select, .field input[type=search] { font: inherit; background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 7px 10px; width: 100%; min-width: 0; }
+.names { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.names input[type=text] { width: 100%; }
+.heroinfo { margin: 0; font-size: 14px; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.chip { font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; }
+.chip.ok { color: var(--ok); } .chip.warn { color: var(--gold); } .chip.err { color: var(--err); }
+.field input[type=text] { font: inherit; font-family: var(--font-mono); background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 4px; padding: 7px 10px; width: 12ch; text-transform: uppercase; }
+.checks { display: grid; gap: 6px; }
+.checks label { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; }
+.checks small { color: var(--muted); }
+input[type=checkbox] { accent-color: var(--gold); }
+table.files { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+table.files td { padding: 4px 0; border-bottom: 1px solid var(--line); }
+table.files td:last-child { text-align: right; color: var(--muted); }
+.tablewrap { overflow-x: auto; }
+.status { font-size: 14px; min-height: 1.5em; margin: 0; }
+.status.ok { color: var(--ok); } .status.err { color: var(--err); }
+details { border-top: 1px solid var(--line); padding-top: 12px; }
+summary { cursor: pointer; font-weight: 700; }
+details p, details li { color: var(--muted); max-width: 65ch; }
+details ul { padding-left: 20px; margin: 6px 0; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>HotA Portrait Forge</h1>
+    <p>Turn any picture into hero portraits for Heroes of Might and Magic III: Horn of the Abyss. Frame it, check it at real game size, and download the PCX files.</p>
+  </header>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="h-frame">
+      <h2 id="h-frame">1. Frame your hero</h2>
+      <div class="row" style="justify-content:space-between">
+        <div class="seg" role="group" aria-label="Portrait being framed">
+          <button type="button" id="tabL" aria-pressed="true">Large 58×64</button>
+          <button type="button" id="tabS" aria-pressed="false">Small 48×32</button>
+        </div>
+        <button type="button" id="reset">Reset framing</button>
+      </div>
+      <label class="linkimg"><input type="checkbox" id="linked" checked> Use the same image for both sizes</label>
+      <p class="srcinfo" id="srcInfo"></p>
+      <label class="drop" id="drop">
+        <input type="file" id="file" accept=".png,.jpg,.jpeg,.webp,.gif,.bmp,image/png,image/jpeg,image/webp,image/gif,image/bmp">
+        <strong id="dropTitle">Upload an image</strong>
+        <span>or drop / paste it here. PNG, JPG, WebP, GIF, BMP.</span>
+      </label>
+      <label class="btn selfie" id="selfieBtn">
+        <input type="file" id="selfie" accept="image/*" capture="user" aria-label="Take a selfie">
+        Take a selfie
+      </label>
+      <textarea class="pastebox" id="pastebox" rows="1" aria-label="Paste an image" placeholder="Or tap here and paste a copied image"></textarea>
+      <p class="hint phone-only">The selfie button opens your phone's camera app. Upload or selfie not opening anything in the Claude app? Copy the image in your photos app and paste it in the box above, or open this page in your phone's browser.</p>
+      <p class="hint pc-only">Want a selfie on a PC? This page can't use your webcam directly. Take a photo with the Windows Camera app (press the Windows key and type Camera), then upload it here. Or open this page on your phone and use the selfie button there.</p>
+
+      <div class="stage">
+        <canvas id="editor" width="290" height="320" tabindex="0" aria-label="Crop area. Drag to move, scroll or pinch to zoom, arrow keys to nudge."></canvas>
+      </div>
+      <div class="zoomrow">
+        <span class="label">Zoom</span>
+        <input type="range" id="zoom" min="0" max="1000" value="0" aria-label="Zoom">
+        <span class="mono" id="zoomVal">1.00×</span>
+      </div>
+      <p class="hint">Drag to move. Scroll, pinch or use the slider to zoom. Arrow keys nudge by one game pixel. Each size is framed separately, so set both tabs.</p>
+    </section>
+
+    <div style="display:grid;gap:24px;min-width:0">
+      <section class="panel" aria-labelledby="h-prev">
+        <h2 id="h-prev">2. In-game preview</h2>
+        <div class="previews">
+          <div class="pv">
+            <span class="label">Large · hero screen</span>
+            <div class="frame"><canvas id="pvL1" width="58" height="64"></canvas><canvas id="pvL3" width="58" height="64" style="width:116px;height:128px"></canvas></div>
+            <code id="nameL">HPL000KN.pcx</code>
+          </div>
+          <div class="pv">
+            <span class="label">Small · adventure bar</span>
+            <div class="frame"><canvas id="pvS1" width="48" height="32"></canvas><canvas id="pvS3" width="48" height="32" style="width:96px;height:64px"></canvas></div>
+            <code id="nameS">HPS000KN.pcx</code>
+          </div>
+        </div>
+        <div class="zoomrow">
+          <label class="label" for="dither">Dithering</label>
+          <input type="range" id="dither" min="0" max="100" value="0" aria-describedby="ditherHelp">
+          <span class="mono" id="ditherVal">Off</span>
+        </div>
+        <p class="hint" id="ditherHelp">Previews show the 256-colour result at 1× and 2×. Dithering mixes neighbouring colours so gradients look smoother instead of blotchy. It only changes the 8-bit PCX.</p>
+      </section>
+
+      <section class="panel" aria-labelledby="h-exp">
+        <h2 id="h-exp">3. Generate and download</h2>
+        <div class="field">
+          <label class="label" for="heroSearch">Hero to replace</label>
+          <input type="search" id="heroSearch" placeholder="Search by name, town or class" autocomplete="off" spellcheck="false">
+          <select id="hero" aria-label="Hero"></select>
+          <p class="heroinfo" id="heroInfo"></p>
+        </div>
+        <div class="names">
+          <div class="field"><label class="label" for="nameLargeIn">Large file</label><input type="text" id="nameLargeIn" maxlength="8" spellcheck="false" autocomplete="off"></div>
+          <div class="field"><label class="label" for="nameSmallIn">Small file</label><input type="text" id="nameSmallIn" maxlength="8" spellcheck="false" autocomplete="off"></div>
+        </div>
+        <div class="checks" role="group" aria-label="Formats">
+          <span class="label">Formats</span>
+          <label><input type="checkbox" id="fPcx8" checked> PCX 8-bit, 256 colours <small>tested in game, drop into Data</small></label>
+          <label><input type="checkbox" id="fPng" checked> PNG <small>to convert yourself</small></label>
+          <label><input type="checkbox" id="fPcx24"> Experimental: H3 native 24-bit <small>untested test file, keep a backup</small></label>
+          <label><input type="checkbox" id="frame" checked> 1 px black border on the small portrait <small>matches the in-game look</small></label>
+        </div>
+        <div class="row">
+          <button type="button" class="primary" id="gen">Generate files</button>
+          <button type="button" id="dl" disabled>Download ZIP</button>
+        </div>
+        <p class="status" id="status" role="status" aria-live="polite"></p>
+        <div class="tablewrap"><table class="files" id="files" hidden><tbody></tbody></table></div>
+
+        <details>
+          <summary>How to use the files</summary>
+          <ul>
+            <li>Large portraits are 58×64 px (HPL…), small ones 48×32 px (HPS…), PCX with at most 256 colours.</li>
+            <li>The 8-bit files never use palette entry 0. The game can treat that colour specially, so leaving it unused avoids graphic glitches.</li>
+            <li>Hero list follows HotA 1.8.1 (with Cove, Factory and Bulwark). File names for the 156 original heroes are confirmed. For HotA heroes the large name is confirmed but the small name is derived from it, and Bulwark names are not published yet. Check them against HotA.lod with MMArchive and edit the fields if needed.</li>
+            <li>Use the 8-bit PCX. Tested: dropping it into <span class="mono">Heroes3\Data</span> works. A standard 24-bit PCX shows up as random colours, because the game reads portraits as 256-colour images. The experimental option writes true colour in the game's own .pcx layout. It is untested, so back up your 8-bit files before you try it.</li>
+            <li>The files are named after the hero portrait you replace; put them in <span class="mono">Heroes3\Data</span> or pack them into a .lod with a tool such as MMArchive.</li>
+            <li>Check how your HotA version loads custom resources before shipping a map to other players: they need the same files installed.</li>
+          </ul>
+        </details>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const SIZES = { L: { w: 58, h: 64, k: 5, prefix: "HPL" }, S: { w: 48, h: 32, k: 6, prefix: "HPS" } };
+  const $ = (id) => document.getElementById(id);
+  const editor = $("editor"), ectx = editor.getContext("2d");
+  const imgs = { L: null, S: null }, srcNames = { L: "", S: "" };  // one source image per portrait size
+  let linked = true;
+  let active = "L";
+  const crops = { L: null, S: null };
+  let generated = null;      // [{name, data:Uint8Array}]
+
+  /* ---------- sample image so the tool opens in a working state ---------- */
+  function sampleImage() {
+    const c = document.createElement("canvas"); c.width = 480; c.height = 520;
+    const g = c.getContext("2d");
+    let gr = g.createLinearGradient(0, 0, 0, 520);
+    gr.addColorStop(0, "#3b5f8a"); gr.addColorStop(.6, "#c98a4b"); gr.addColorStop(1, "#5a2f1c");
+    g.fillStyle = gr; g.fillRect(0, 0, 480, 520);
+    // cape
+    g.fillStyle = "#7a1d1d"; g.beginPath(); g.moveTo(60, 520); g.quadraticCurveTo(240, 250, 420, 520); g.fill();
+    // armour shoulders
+    gr = g.createLinearGradient(0, 330, 0, 520); gr.addColorStop(0, "#d7d9dc"); gr.addColorStop(1, "#5b6068");
+    g.fillStyle = gr; g.beginPath(); g.moveTo(90, 520); g.quadraticCurveTo(110, 360, 240, 345); g.quadraticCurveTo(370, 360, 390, 520); g.fill();
+    // neck + head
+    g.fillStyle = "#c58c63"; g.fillRect(212, 280, 56, 80);
+    gr = g.createRadialGradient(225, 210, 10, 240, 230, 95); gr.addColorStop(0, "#f2c9a0"); gr.addColorStop(1, "#b07650");
+    g.fillStyle = gr; g.beginPath(); g.ellipse(240, 225, 72, 90, 0, 0, Math.PI * 2); g.fill();
+    // hair + beard
+    g.fillStyle = "#4a2b17"; g.beginPath(); g.ellipse(240, 160, 80, 45, 0, Math.PI, 0); g.fill();
+    g.beginPath(); g.moveTo(172, 250); g.quadraticCurveTo(178, 345, 240, 352); g.quadraticCurveTo(302, 345, 308, 250); g.quadraticCurveTo(275, 300, 240, 296); g.quadraticCurveTo(205, 300, 172, 250); g.fill();
+    g.fillStyle = "#8a3b2e"; g.fillRect(222, 268, 36, 6);
+    // eyes
+    g.fillStyle = "#1c120b"; g.beginPath(); g.ellipse(214, 222, 8, 5, 0, 0, 7); g.ellipse(266, 222, 8, 5, 0, 0, 7); g.fill();
+    // gold trim
+    g.strokeStyle = "#e0b04a"; g.lineWidth = 8; g.beginPath(); g.moveTo(150, 400); g.quadraticCurveTo(240, 370, 330, 400); g.stroke();
+    g.fillStyle = "rgba(255,255,255,.85)"; g.font = "600 18px sans-serif"; g.textAlign = "center";
+    g.fillText("SAMPLE · upload your own image", 240, 505);
+    return c;
+  }
+
+  /* ---------- crop model: z = editor px per source px, (cx,cy) = source point at frame centre ---------- */
+  function editorSize(k) { const s = SIZES[k]; return { W: s.w * s.k, H: s.h * s.k }; }
+  function baseZoom(k) { const { W, H } = editorSize(k); const im = imgs[k]; return Math.max(W / im.width, H / im.height); }
+  function defaultCrop(k) {
+    const z = baseZoom(k), img = imgs[k];
+    if (k === "L") return { z, cx: img.width / 2, cy: img.height / 2 };
+    const zz = z * 1.6; // small portrait: tighter, aimed at the upper part (face)
+    const { H } = editorSize(k);
+    return { z: zz, cx: img.width / 2, cy: Math.max(H / 2 / zz, img.height * 0.4) };
+  }
+  function drawCrop(ctx, k, W, H) {
+    const c = crops[k];
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
+    const f = W / editorSize(k).W;
+    ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
+    ctx.setTransform(c.z * f, 0, 0, c.z * f, W / 2 - c.cx * c.z * f, H / 2 - c.cy * c.z * f);
+    ctx.drawImage(imgs[k], 0, 0);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+  }
+
+  function renderEditor() {
+    const { W, H } = editorSize(active);
+    if (editor.width !== W || editor.height !== H) { editor.width = W; editor.height = H; }
+    drawCrop(ectx, active, W, H);
+    // faint game-pixel grid hint at the frame border
+    ectx.strokeStyle = "rgba(255,255,255,.35)"; ectx.lineWidth = 1; ectx.strokeRect(.5, .5, W - 1, H - 1);
+    const z = crops[active].z / baseZoom(active);
+    $("zoom").value = Math.round(Math.log(z) / Math.log(8) * 1000);
+    $("zoomVal").textContent = z.toFixed(2) + "×";
+  }
+
+  /* ---------- render to game size with stepwise downscale ---------- */
+  function renderFinal(k) {
+    const s = SIZES[k];
+    let W = s.w * s.k * 2, H = s.h * s.k * 2;  // supersample
+    let c = document.createElement("canvas"); c.width = W; c.height = H;
+    drawCrop(c.getContext("2d"), k, W, H);
+    while (W / 2 >= s.w * 1.5) {
+      const n = document.createElement("canvas"); n.width = Math.round(W / 2); n.height = Math.round(H / 2);
+      const g = n.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(c, 0, 0, n.width, n.height);
+      c = n; W = n.width; H = n.height;
+    }
+    const out = document.createElement("canvas"); out.width = s.w; out.height = s.h;
+    const g = out.getContext("2d"); g.imageSmoothingQuality = "high"; g.drawImage(c, 0, 0, s.w, s.h);
+    if (k === "S" && $("frame").checked) { g.strokeStyle = "#000"; g.lineWidth = 1; g.strokeRect(.5, .5, s.w - 1, s.h - 1); }
+    const d = g.getImageData(0, 0, s.w, s.h).data;
+    const rgb = new Uint8Array(s.w * s.h * 3);
+    for (let i = 0, j = 0; i < d.length; i += 4) { rgb[j++] = d[i]; rgb[j++] = d[i + 1]; rgb[j++] = d[i + 2]; }
+    return { w: s.w, h: s.h, rgb, canvas: out };
+  }
+
+  /* ---------- median-cut quantizer to 255 colours (palette index 0 left unused) ---------- */
+  function quantize(rgb, maxColors, w, dither) {
+    const n = rgb.length / 3;
+    const map = new Map();
+    for (let i = 0; i < n; i++) { const key = (rgb[i*3] << 16) | (rgb[i*3+1] << 8) | rgb[i*3+2]; map.set(key, (map.get(key) || 0) + 1); }
+    let colors = [...map.entries()].map(([k, c]) => [(k >> 16) & 255, (k >> 8) & 255, k & 255, c]);
+    let palette;
+    if (colors.length <= maxColors) palette = colors.map(c => [c[0], c[1], c[2]]);
+    else {
+      let boxes = [colors];
+      while (boxes.length < maxColors) {
+        let bi = -1, best = -1, ch = 0;
+        boxes.forEach((b, i) => {
+          if (b.length < 2) return;
+          for (let a = 0; a < 3; a++) {
+            let lo = 255, hi = 0; for (const c of b) { if (c[a] < lo) lo = c[a]; if (c[a] > hi) hi = c[a]; }
+            const score = (hi - lo) * Math.sqrt(b.reduce((s, c) => s + c[3], 0));
+            if (score > best) { best = score; bi = i; ch = a; }
+          }
+        });
+        if (bi < 0 || best <= 0) break;
+        const b = boxes[bi].sort((p, q) => p[ch] - q[ch]);
+        const total = b.reduce((s, c) => s + c[3], 0);
+        let acc = 0, cut = 1;
+        for (let i = 0; i < b.length - 1; i++) { acc += b[i][3]; if (acc >= total / 2) { cut = i + 1; break; } }
+        boxes.splice(bi, 1, b.slice(0, cut), b.slice(cut));
+      }
+      palette = boxes.map(b => { let r = 0, g = 0, bl = 0, t = 0; for (const c of b) { r += c[0]*c[3]; g += c[1]*c[3]; bl += c[2]*c[3]; t += c[3]; } return [Math.round(r/t), Math.round(g/t), Math.round(bl/t)]; });
+    }
+    const idx = new Uint8Array(n), cache = new Map();
+    const nearest = (r, g, b) => {
+      const key = (r << 16) | (g << 8) | b; let best = cache.get(key);
+      if (best === undefined) {
+        let bd = Infinity; best = 0;
+        for (let p = 0; p < palette.length; p++) { const q = palette[p], dr = q[0]-r, dg = q[1]-g, db = q[2]-b, d = 2*dr*dr + 4*dg*dg + 3*db*db; if (d < bd) { bd = d; best = p; } }
+        cache.set(key, best);
+      }
+      return best;
+    };
+    if (dither > 0 && w) {
+      // Floyd-Steinberg, serpentine, error scaled by strength
+      const buf = Float32Array.from(rgb), h = n / w;
+      const clamp = (v) => v < 0 ? 0 : v > 255 ? 255 : Math.round(v);
+      for (let y = 0; y < h; y++) {
+        const ltr = (y & 1) === 0;
+        for (let xi = 0; xi < w; xi++) {
+          const x = ltr ? xi : w - 1 - xi, i = y * w + x, o = i * 3;
+          const r = clamp(buf[o]), g = clamp(buf[o+1]), bl = clamp(buf[o+2]);
+          const best = nearest(r, g, bl), q = palette[best];
+          idx[i] = best + 1;
+          const er = (r - q[0]) * dither, eg = (g - q[1]) * dither, eb = (bl - q[2]) * dither;
+          const spread = (dx, dy, f) => {
+            const nx = x + (ltr ? dx : -dx), ny = y + dy;
+            if (nx < 0 || nx >= w || ny >= h) return;
+            const j = (ny * w + nx) * 3; buf[j] += er * f; buf[j+1] += eg * f; buf[j+2] += eb * f;
+          };
+          spread(1, 0, 7/16); spread(-1, 1, 3/16); spread(0, 1, 5/16); spread(1, 1, 1/16);
+        }
+      }
+    } else {
+      for (let i = 0; i < n; i++) idx[i] = nearest(rgb[i*3], rgb[i*3+1], rgb[i*3+2]) + 1; // shift: index 0 reserved
+    }
+    const pal = new Uint8Array(768);
+    pal[0] = 0; pal[1] = 255; pal[2] = 255; // reserved entry 0 (cyan), never referenced by pixels
+    palette.forEach((c, p) => { pal[(p+1)*3] = c[0]; pal[(p+1)*3+1] = c[1]; pal[(p+1)*3+2] = c[2]; });
+    return { idx, pal };
+  }
+
+  /* ---------- PCX writer (ZSoft v5, RLE) ---------- */
+  function rleLine(src, out) {
+    let i = 0;
+    while (i < src.length) {
+      const v = src[i]; let run = 1;
+      while (i + run < src.length && src[i + run] === v && run < 63) run++;
+      if (run > 1 || v >= 0xC0) out.push(0xC0 | run, v); else out.push(v);
+      i += run;
+    }
+  }
+  function pcxHeader(w, h, planes, bpl) {
+    const hd = new Uint8Array(128), dv = new DataView(hd.buffer);
+    hd[0] = 10; hd[1] = 5; hd[2] = 1; hd[3] = 8;
+    dv.setUint16(4, 0, true); dv.setUint16(6, 0, true); dv.setUint16(8, w - 1, true); dv.setUint16(10, h - 1, true);
+    dv.setUint16(12, 72, true); dv.setUint16(14, 72, true);
+    hd[65] = planes; dv.setUint16(66, bpl, true); dv.setUint16(68, 1, true);
+    dv.setUint16(70, w, true); dv.setUint16(72, h, true);
+    return hd;
+  }
+  function pcx8(w, h, idx, pal) {
+    const bpl = w + (w & 1), out = [], line = new Uint8Array(bpl);
+    for (let y = 0; y < h; y++) { line.fill(0); line.set(idx.subarray(y*w, y*w + w)); rleLine(line, out); }
+    const hd = pcxHeader(w, h, 1, bpl);
+    const res = new Uint8Array(128 + out.length + 1 + 768);
+    res.set(hd); res.set(out, 128); res[128 + out.length] = 0x0C; res.set(pal, 129 + out.length);
+    return res;
+  }
+  // Heroes III's own .pcx layout (not ZSoft): uint32 size, uint32 width, uint32 height, then pixels.
+  // size == w*h*3 marks true colour, stored as BGR.
+  function h3pcx24(w, h, rgb) {
+    const out = new Uint8Array(12 + w * h * 3), dv = new DataView(out.buffer);
+    dv.setUint32(0, w * h * 3, true); dv.setUint32(4, w, true); dv.setUint32(8, h, true);
+    for (let i = 0; i < w * h; i++) { out[12 + i*3] = rgb[i*3 + 2]; out[13 + i*3] = rgb[i*3 + 1]; out[14 + i*3] = rgb[i*3]; }
+    return out;
+  }
+  function pcx24(w, h, rgb) {
+    const bpl = w + (w & 1), out = [], line = new Uint8Array(bpl);
+    for (let y = 0; y < h; y++) for (let p = 0; p < 3; p++) {
+      line.fill(0); for (let x = 0; x < w; x++) line[x] = rgb[(y*w + x)*3 + p];
+      rleLine(line, out);
+    }
+    const res = new Uint8Array(128 + out.length);
+    res.set(pcxHeader(w, h, 3, bpl)); res.set(out, 128);
+    return res;
+  }
+
+  /* ---------- minimal ZIP (store) ---------- */
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  const crc32 = (d) => { let c = 0xFFFFFFFF; for (let i = 0; i < d.length; i++) c = CRC[(c ^ d[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+  function zip(files) {
+    const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+    const now = new Date();
+    const time = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
+    const date = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+    for (const f of files) {
+      const name = enc.encode(f.name), crc = crc32(f.data), sz = f.data.length;
+      const lh = new DataView(new ArrayBuffer(30));
+      lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(10, time, true); lh.setUint16(12, date, true);
+      lh.setUint32(14, crc, true); lh.setUint32(18, sz, true); lh.setUint32(22, sz, true); lh.setUint16(26, name.length, true);
+      parts.push(new Uint8Array(lh.buffer), name, f.data);
+      const ch = new DataView(new ArrayBuffer(46));
+      ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(12, time, true); ch.setUint16(14, date, true);
+      ch.setUint32(16, crc, true); ch.setUint32(20, sz, true); ch.setUint32(24, sz, true); ch.setUint16(28, name.length, true); ch.setUint32(42, off, true);
+      central.push(new Uint8Array(ch.buffer), name);
+      off += 30 + name.length + sz;
+    }
+    const cdSize = central.reduce((s, p) => s + p.length, 0);
+    const end = new DataView(new ArrayBuffer(22));
+    end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+    end.setUint32(12, cdSize, true); end.setUint32(16, off, true);
+    return new Blob([...parts, ...central, new Uint8Array(end.buffer)], { type: "application/zip" });
+  }
+  function canvasToPng(c) { return new Promise(r => c.toBlob(b => b.arrayBuffer().then(a => r(new Uint8Array(a))), "image/png")); }
+
+  /* ---------- previews ---------- */
+  function paintIndexed(cv, w, h, idx, pal) {
+    const g = cv.getContext("2d"), im = g.createImageData(w, h);
+    for (let i = 0; i < w * h; i++) { const p = idx[i] * 3; im.data[i*4] = pal[p]; im.data[i*4+1] = pal[p+1]; im.data[i*4+2] = pal[p+2]; im.data[i*4+3] = 255; }
+    g.putImageData(im, 0, 0);
+  }
+  let pvTimer = 0;
+  function schedulePreview() { clearTimeout(pvTimer); pvTimer = setTimeout(updatePreviews, 60); invalidate(); }
+  function updatePreviews() {
+    for (const k of ["L", "S"]) {
+      const r = renderFinal(k), q = quantize(r.rgb, 255, r.w, ditherAmt());
+      paintIndexed($("pv" + k + "1"), r.w, r.h, q.idx, q.pal);
+      paintIndexed($("pv" + k + "3"), r.w, r.h, q.idx, q.pal);
+    }
+  }
+
+  /* ---------- hero picker (HotA 1.8.1 list) ---------- */
+  // [name, town, class, large, small, status 0=confirmed 1=small derived 2=unknown, campaign]
+  const HEROES = [["Orrin","Castle","Knight","HPL000KN","HPS000KN",0,0],["Valeska","Castle","Knight","HPL001KN","HPS001KN",0,0],["Edric","Castle","Knight","HPL002KN","HPS002KN",0,0],["Sylvia","Castle","Knight","HPL003KN","HPS003KN",0,0],["Lord Haart","Castle","Knight","HPL004KN","HPS004KN",0,0],["Sorsha","Castle","Knight","HPL005KN","HPS005KN",0,0],["Christian","Castle","Knight","HPL006KN","HPS006KN",0,0],["Tyris","Castle","Knight","HPL007KN","HPS007KN",0,0],["Rion","Castle","Cleric","HPL008CL","HPS008CL",0,0],["Adela","Castle","Cleric","HPL009CL","HPS009CL",0,0],["Cuthbert","Castle","Cleric","HPL010CL","HPS010CL",0,0],["Adelaide","Castle","Cleric","HPL011CL","HPS011CL",0,0],["Ingham","Castle","Cleric","HPL012CL","HPS012CL",0,0],["Sanya","Castle","Cleric","HPL013CL","HPS013CL",0,0],["Loynis","Castle","Cleric","HPL014CL","HPS014CL",0,0],["Caitlin","Castle","Cleric","HPL015CL","HPS015CL",0,0],["Sir Mullich","Castle","Knight","HPL130KN","HPS130KN",0,1],["Catherine","Castle","Knight","HPL128QC","HPS128QC",0,1],["Roland","Castle","Knight","HPL009SH","HPS009SH",0,1],["Beatrice","Castle","Knight","HPL003KX","HPS003KX",1,0],["Mephala","Rampart","Ranger","HPL016RN","HPS016RN",0,0],["Ufretin","Rampart","Ranger","HPL017RN","HPS017RN",0,0],["Jenova","Rampart","Ranger","HPL018RN","HPS018RN",0,0],["Ryland","Rampart","Ranger","HPL019RN","HPS019RN",0,0],["Thorgrim","Rampart","Ranger","HPL020RN","HPS020RN",0,0],["Ivor","Rampart","Ranger","HPL021RN","HPS021RN",0,0],["Clancy","Rampart","Ranger","HPL022RN","HPS022RN",0,0],["Kyrre","Rampart","Ranger","HPL023RN","HPS023RN",0,0],["Coronius","Rampart","Druid","HPL024DR","HPS024DR",0,0],["Uland","Rampart","Druid","HPL025DR","HPS025DR",0,0],["Elleshar","Rampart","Druid","HPL026DR","HPS026DR",0,0],["Gem","Rampart","Druid","HPL027DR","HPS027DR",0,0],["Malcom","Rampart","Druid","HPL028DR","HPS028DR",0,0],["Melodia","Rampart","Druid","HPL029DR","HPS029DR",0,0],["Alagar","Rampart","Druid","HPL030DR","HPS030DR",0,0],["Aeris","Rampart","Druid","HPL031DR","HPS031DR",0,0],["Gelu","Rampart","Ranger","HPL004SH","HPS004SH",0,1],["Giselle","Rampart","Ranger","HPL020RX","HPS020RX",1,0],["Piquedram","Tower","Alchemist","HPL032AL","HPS032AL",0,0],["Thane","Tower","Alchemist","HPL033AL","HPS033AL",0,0],["Josephine","Tower","Alchemist","HPL034AL","HPS034AL",0,0],["Neela","Tower","Alchemist","HPL035AL","HPS035AL",0,0],["Torosar","Tower","Alchemist","HPL036AL","HPS036AL",0,0],["Fafner","Tower","Alchemist","HPL037AL","HPS037AL",0,0],["Rissa","Tower","Alchemist","HPL038AL","HPS038AL",0,0],["Iona","Tower","Alchemist","HPL039AL","HPS039AL",0,0],["Astral","Tower","Wizard","HPL040WZ","HPS040WZ",0,0],["Halon","Tower","Wizard","HPL041WZ","HPS041WZ",0,0],["Serena","Tower","Wizard","HPL042WZ","HPS042WZ",0,0],["Daremyth","Tower","Wizard","HPL043WZ","HPS043WZ",0,0],["Theodorus","Tower","Wizard","HPL044WZ","HPS044WZ",0,0],["Solmyr","Tower","Wizard","HPL045WZ","HPS045WZ",0,0],["Cyra","Tower","Wizard","HPL046WZ","HPS046WZ",0,0],["Aine","Tower","Wizard","HPL047WZ","HPS047WZ",0,0],["Dracon","Tower","Wizard","HPL003SH","HPS003SH",0,1],["Fiona","Inferno","Demoniac","HPL048HR","HPS048HR",0,0],["Rashka","Inferno","Demoniac","HPL049HR","HPS049HR",0,0],["Marius","Inferno","Demoniac","HPL050HR","HPS050HR",0,0],["Ignatius","Inferno","Demoniac","HPL051HR","HPS051HR",0,0],["Octavia","Inferno","Demoniac","HPL052HR","HPS052HR",0,0],["Calh","Inferno","Demoniac","HPL053HR","HPS053HR",0,0],["Pyre","Inferno","Demoniac","HPL054HR","HPS054HR",0,0],["Nymus","Inferno","Demoniac","HPL055HR","HPS055HR",0,0],["Ayden","Inferno","Heretic","HPL056DM","HPS056DM",0,0],["Xyron","Inferno","Heretic","HPL057DM","HPS057DM",0,0],["Axsis","Inferno","Heretic","HPL058DM","HPS058DM",0,0],["Olema","Inferno","Heretic","HPL059DM","HPS059DM",0,0],["Calid","Inferno","Heretic","HPL060DM","HPS060DM",0,0],["Ash","Inferno","Heretic","HPL061DM","HPS061DM",0,0],["Zydar","Inferno","Heretic","HPL062DM","HPS062DM",0,0],["Xarfax","Inferno","Heretic","HPL063DM","HPS063DM",0,0],["Xeron","Inferno","Demoniac","HPL131DM","HPS131DM",0,1],["Kydoimos","Inferno","Demoniac","HPL208","HPS208",1,1],["Miseria","Inferno","Heretic","HPL209","HPS209",1,1],["Athe","Inferno","Heretic","HPL210","HPS210",1,1],["Straker","Necropolis","Death Knight","HPL064DK","HPS064DK",0,0],["Vokial","Necropolis","Death Knight","HPL065DK","HPS065DK",0,0],["Moandor","Necropolis","Death Knight","HPL066DK","HPS066DK",0,0],["Charna","Necropolis","Death Knight","HPL067DK","HPS067DK",0,0],["Tamika","Necropolis","Death Knight","HPL068DK","HPS068DK",0,0],["Isra","Necropolis","Death Knight","HPL069DK","HPS069DK",0,0],["Clavius","Necropolis","Death Knight","HPL070DK","HPS070DK",0,0],["Galthran","Necropolis","Death Knight","HPL071DK","HPS071DK",0,0],["Septienna","Necropolis","Necromancer","HPL072NC","HPS072NC",0,0],["Aislinn","Necropolis","Necromancer","HPL073NC","HPS073NC",0,0],["Sandro","Necropolis","Necromancer","HPL074NC","HPS074NC",0,0],["Nimbus","Necropolis","Necromancer","HPL075NC","HPS075NC",0,0],["Thant","Necropolis","Necromancer","HPL076NC","HPS076NC",0,0],["Xsi","Necropolis","Necromancer","HPL077NC","HPS077NC",0,0],["Vidomina","Necropolis","Necromancer","HPL078NC","HPS078NC",0,0],["Nagash","Necropolis","Necromancer","HPL079NC","HPS079NC",0,0],["Haart Lich","Necropolis","Death Knight","HPL006SH","HPS006SH",0,1],["Ranloo","Necropolis","Death Knight","HPL071DX","HPS071DX",1,0],["Boyd","Necropolis","Death Knight","HPL196","HPS196",1,1],["Maximus","Necropolis","Death Knight","HPL218","HPS218",1,1],["Lorelei","Dungeon","Overlord","HPL080OV","HPS080OV",0,0],["Arlach","Dungeon","Overlord","HPL081OV","HPS081OV",0,0],["Dace","Dungeon","Overlord","HPL082OV","HPS082OV",0,0],["Ajit","Dungeon","Overlord","HPL083OV","HPS083OV",0,0],["Damacon","Dungeon","Overlord","HPL084OV","HPS084OV",0,0],["Gunnar","Dungeon","Overlord","HPL085OV","HPS085OV",0,0],["Synca","Dungeon","Overlord","HPL086OV","HPS086OV",0,0],["Shakti","Dungeon","Overlord","HPL087OV","HPS087OV",0,0],["Alamar","Dungeon","Warlock","HPL088WL","HPS088WL",0,0],["Jaegar","Dungeon","Warlock","HPL089WL","HPS089WL",0,0],["Malekith","Dungeon","Warlock","HPL090WL","HPS090WL",0,0],["Jeddite","Dungeon","Warlock","HPL091WL","HPS091WL",0,0],["Geon","Dungeon","Warlock","HPL092WL","HPS092WL",0,0],["Deemer","Dungeon","Warlock","HPL093WL","HPS093WL",0,0],["Sephinroth","Dungeon","Warlock","HPL094WL","HPS094WL",0,0],["Darkstorn","Dungeon","Warlock","HPL095WL","HPS095WL",0,0],["Mutare","Dungeon","Overlord","HPL007SH","HPS007SH",0,1],["Mutare Drake","Dungeon","Overlord","HPL008SH","HPS008SH",0,1],["Yog","Stronghold","Barbarian","HPL096BR","HPS096BR",0,0],["Gurnisson","Stronghold","Barbarian","HPL097BR","HPS097BR",0,0],["Jabarkas","Stronghold","Barbarian","HPL098BR","HPS098BR",0,0],["Shiva","Stronghold","Barbarian","HPL099BR","HPS099BR",0,0],["Gretchin","Stronghold","Barbarian","HPL100BR","HPS100BR",0,0],["Krellion","Stronghold","Barbarian","HPL101BR","HPS101BR",0,0],["Crag Hack","Stronghold","Barbarian","HPL102BR","HPS102BR",0,0],["Tyraxor","Stronghold","Barbarian","HPL103BR","HPS103BR",0,0],["Gird","Stronghold","Battle Mage","HPL104BM","HPS104BM",0,0],["Vey","Stronghold","Battle Mage","HPL105BM","HPS105BM",0,0],["Dessa","Stronghold","Battle Mage","HPL106BM","HPS106BM",0,0],["Terek","Stronghold","Battle Mage","HPL107BM","HPS107BM",0,0],["Zubin","Stronghold","Battle Mage","HPL108BM","HPS108BM",0,0],["Gundula","Stronghold","Battle Mage","HPL109BM","HPS109BM",0,0],["Oris","Stronghold","Battle Mage","HPL110BM","HPS110BM",0,0],["Saurug","Stronghold","Battle Mage","HPL111BM","HPS111BM",0,0],["Kilgor","Stronghold","Barbarian","HPL005SH","HPS005SH",0,1],["Boragus","Stronghold","Barbarian","HPL001SH","HPS001SH",0,1],["Zog","Stronghold","Battle Mage","HPL198","HPS198",1,1],["Gruezak","Stronghold","Barbarian","HPL217","HPS217",1,1],["Bron","Fortress","Beastmaster","HPL112BS","HPS112BS",0,0],["Drakon","Fortress","Beastmaster","HPL113BS","HPS113BS",0,0],["Wystan","Fortress","Beastmaster","HPL114BS","HPS114BS",0,0],["Tazar","Fortress","Beastmaster","HPL115BS","HPS115BS",0,0],["Alkin","Fortress","Beastmaster","HPL116BS","HPS116BS",0,0],["Korbac","Fortress","Beastmaster","HPL117BS","HPS117BS",0,0],["Gerwulf","Fortress","Beastmaster","HPL118BS","HPS118BS",0,0],["Broghild","Fortress","Beastmaster","HPL119BS","HPS119BS",0,0],["Mirlanda","Fortress","Witch","HPL120WH","HPS120WH",0,0],["Rosic","Fortress","Witch","HPL121WH","HPS121WH",0,0],["Voy","Fortress","Witch","HPL122WH","HPS122WH",0,0],["Verdish","Fortress","Witch","HPL123WH","HPS123WH",0,0],["Merist","Fortress","Witch","HPL124WH","HPS124WH",0,0],["Styg","Fortress","Witch","HPL125WH","HPS125WH",0,0],["Andra","Fortress","Witch","HPL126WH","HPS126WH",0,0],["Tiva","Fortress","Witch","HPL127WH","HPS127WH",0,0],["Adrienne","Fortress","Witch","HPL000SH","HPS000SH",0,1],["Kinkeria","Fortress","Witch","HPL122WX","HPS122WX",1,0],["Pactal","Fortress","Beastmaster","HPL197","HPS197",1,1],["Areshrak","Fortress","Beastmaster","HPL207","HPS207",1,1],["Alkin (campaign)","Fortress","Beastmaster","HPL116BX","HPS116BX",1,1],["Pasis","Conflux","Planeswalker","HPL000PL","HPS000PL",0,0],["Thunar","Conflux","Planeswalker","HPL001PL","HPS001PL",0,0],["Ignissa","Conflux","Planeswalker","HPL002PL","HPS002PL",0,0],["Lacus","Conflux","Planeswalker","HPL003PL","HPS003PL",0,0],["Monere","Conflux","Planeswalker","HPL004PL","HPS004PL",0,0],["Erdamon","Conflux","Planeswalker","HPL005PL","HPS005PL",0,0],["Fiur","Conflux","Planeswalker","HPL006PL","HPS006PL",0,0],["Kalt","Conflux","Planeswalker","HPL007PL","HPS007PL",0,0],["Luna","Conflux","Elementalist","HPL000EL","HPS000EL",0,0],["Brissa","Conflux","Elementalist","HPL001EL","HPS001EL",0,0],["Ciele","Conflux","Elementalist","HPL002EL","HPS002EL",0,0],["Labetha","Conflux","Elementalist","HPL003EL","HPS003EL",0,0],["Inteus","Conflux","Elementalist","HPL004EL","HPS004EL",0,0],["Aenain","Conflux","Elementalist","HPL005EL","HPS005EL",0,0],["Gelare","Conflux","Elementalist","HPL006EL","HPS006EL",0,0],["Grindan","Conflux","Elementalist","HPL007EL","HPS007EL",0,0],["Corkes","Cove","Captain","HPLP01","HPSP01",1,0],["Jeremy","Cove","Captain","HPLP02","HPSP02",1,0],["Illor","Cove","Captain","HPLP03","HPSP03",1,0],["Elmore","Cove","Captain","HPLP17","HPSP17",1,0],["Derek","Cove","Captain","HPLP05","HPSP05",1,0],["Leena","Cove","Captain","HPLP06","HPSP06",1,0],["Anabel","Cove","Captain","HPLP13","HPSP13",1,0],["Cassiopeia","Cove","Captain","HPLP15","HPSP15",1,0],["Miriam","Cove","Captain","HPLP16","HPSP16",1,0],["Bidley","Cove","Captain","HCVC01","",1,1],["Tark","Cove","Captain","HCVC02","",1,1],["Casmetra","Cove","Navigator","HPLP04","HPSP04",1,0],["Eovacius","Cove","Navigator","HPLP07","HPSP07",1,0],["Spint","Cove","Navigator","HPLP08","HPSP08",1,0],["Andal","Cove","Navigator","HPLP09","HPSP09",1,0],["Manfred","Cove","Navigator","HPLP10","HPSP10",1,0],["Zilare","Cove","Navigator","HPLP11","HPSP11",1,0],["Astra","Cove","Navigator","HPLP12","HPSP12",1,0],["Dargem","Cove","Navigator","HPLP14","HPSP14",1,0],["Balfour","Cove","Navigator","HPL219","HPS219",1,1],["Henrietta","Factory","Mercenary","HPL179","HPS179",1,0],["Sam","Factory","Mercenary","HPL180","HPS180",1,0],["Tancred","Factory","Mercenary","HPL181","HPS181",1,0],["Melchior","Factory","Mercenary","HPL182","HPS182",1,0],["Floribert","Factory","Mercenary","HPL183","HPS183",1,0],["Wynona","Factory","Mercenary","HPL184","HPS184",1,0],["Dury","Factory","Mercenary","HPL185","HPS185",1,0],["Morton","Factory","Mercenary","HPL186","HPS186",1,0],["Tavin","Factory","Mercenary","HPL199","HPS199",1,1],["Murdoch","Factory","Mercenary","HPL200","HPS200",1,1],["Celestine","Factory","Artificer","HPL187","HPS187",1,0],["Todd","Factory","Artificer","HPL188","HPS188",1,0],["Agar","Factory","Artificer","HPL189","HPS189",1,0],["Bertram","Factory","Artificer","HPL190","HPS190",1,0],["Wrathmont","Factory","Artificer","HPL191","HPS191",1,0],["Ziph","Factory","Artificer","HPL192","HPS192",1,0],["Victoria","Factory","Artificer","HPL193","HPS193",1,0],["Eanswythe","Factory","Artificer","HPL194","HPS194",1,0],["Frederick","Factory","Artificer","HPL195","HPS195",1,1],["Stina","Factory","Mercenary","HPL201","HPS201",1,1],["Umender","Factory","Artificer","HPL202","HPS202",1,1],["Elderian","Factory","Artificer","HPL203","HPS203",1,1],["Valquest","Factory","Mercenary","HPL204","HPS204",1,1],["Jangaard","Factory","Mercenary","HPL205","HPS205",1,1],["Winzells","Factory","Mercenary","HPL206","HPS206",1,1],["Dhuin","Bulwark","Chieftain","","",2,0],["Oidana","Bulwark","Chieftain","","",2,0],["Neia","Bulwark","Chieftain","","",2,0],["Eikthurn","Bulwark","Chieftain","","",2,0],["Creyle","Bulwark","Chieftain","","",2,0],["Spadum","Bulwark","Chieftain","","",2,0],["Kynr","Bulwark","Chieftain","","",2,0],["Ergon","Bulwark","Chieftain","","",2,0],["Kriv","Bulwark","Elder","","",2,0],["Glacius","Bulwark","Elder","","",2,0],["Sial","Bulwark","Elder","","",2,0],["Dalton","Bulwark","Elder","","",2,0],["Biarma","Bulwark","Elder","","",2,0],["Akka","Bulwark","Elder","","",2,0],["Vehr","Bulwark","Elder","","",2,0],["Allora","Bulwark","Elder","","",2,0],["Haugir","Bulwark","Elder","","",2,0],["Tarnum (Barbarian)","Campaign","Barbarian","HPL211","HPS211",1,1],["Tarnum (Knight)","Campaign","Knight","HPL212","HPS212",1,1],["Tarnum (Wizard)","Campaign","Wizard","HPL213","HPS213",1,1],["Tarnum (Beastmaster)","Campaign","Beastmaster","HPL214","HPS214",1,1],["Tarnum (Ranger)","Campaign","Ranger","HPL215","HPS215",1,1],["Tarnum (Overlord)","Campaign","Overlord","HPL216","HPS216",1,1],["Christian (campaign)","Campaign","","HPL002SH","HPS002SH",1,1],["General Kendal","Campaign","","HPL129MK","HPS129MK",1,1],["Ordwald","Campaign","","HPL132WL","HPS132WL",1,1],["Finneas","Campaign","","HPL133NC","HPS133NC",1,1],["Gem (Sorceress)","Campaign","","HPL134NC","HPS134NC",1,1],["Sandro (campaign)","Campaign","","HPL135WI","HPS135WI",1,1],["Yog (Wizard)","Campaign","","HPL136WI","HPS136WI",1,1]];
+  const TOWNS = [...new Set(HEROES.map(h => h[1]))];
+  const sel = $("hero"), search = $("heroSearch");
+  const norm = (v) => (v || "").toUpperCase().replace(/[^0-9A-Z_]/g, "").slice(0, 8);
+  function fillHeroes(q) {
+    q = (q || "").trim().toLowerCase();
+    const keep = sel.value; sel.textContent = "";
+    const custom = new Option("Custom file names", "custom"); sel.add(custom);
+    let count = 0;
+    for (const t of TOWNS) {
+      const og = document.createElement("optgroup"); og.label = t;
+      HEROES.forEach((h, i) => {
+        if (h[1] !== t) return;
+        const hay = (h[0] + " " + h[1] + " " + h[2] + " " + h[3]).toLowerCase();
+        if (q && !hay.includes(q)) return;
+        og.append(new Option(h[0] + (h[6] ? " (campaign)" : "") + (h[2] ? " · " + h[2] : ""), String(i))); count++;
+      });
+      if (og.children.length) sel.append(og);
+    }
+    if ([...sel.options].some(o => o.value === keep)) sel.value = keep;
+    else if (q && count) sel.selectedIndex = 1;
+    return count;
+  }
+  function pickHero() {
+    const info = $("heroInfo"); info.textContent = "";
+    if ($("status").classList.contains("err")) setStatus("");
+    const chip = (txt, cls) => { const c = document.createElement("span"); c.className = "chip " + cls; c.textContent = txt; return c; };
+    if (sel.value === "custom") {
+      info.append(chip("Custom", "warn"), document.createTextNode("Type the file names you want, up to 8 letters or digits each."));
+    } else {
+      const h = HEROES[+sel.value];
+      $("nameLargeIn").value = h[3]; $("nameSmallIn").value = h[4];
+      const meta = document.createElement("span"); meta.textContent = [h[1], h[2], h[6] ? "campaign" : ""].filter(Boolean).join(" · ");
+      info.append(meta);
+      if (h[5] === 0) info.append(chip("File names confirmed", "ok"));
+      else if (h[5] === 1) info.append(chip(h[4] ? "Small name not confirmed" : "Small name unknown", "warn"));
+      else info.append(chip("File names unknown", "err"), document.createTextNode("Look them up in HotA.lod and type them in."));
+    }
+    updateNames();
+  }
+  search.addEventListener("input", () => { const n = fillHeroes(search.value); pickHero(); if (!n) setStatus("No hero matches that search."); });
+  sel.addEventListener("change", pickHero);
+  ["nameLargeIn", "nameSmallIn"].forEach(id => $(id).addEventListener("input", e => { const v = norm(e.target.value); if (v !== e.target.value) e.target.value = v; updateNames(); }));
+  function names() { return { L: norm($("nameLargeIn").value), S: norm($("nameSmallIn").value) }; }
+  function heroLabel() { return sel.value === "custom" ? "custom" : HEROES[+sel.value][0].toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
+  function updateNames() { const n = names(); $("nameL").textContent = (n.L || "?") + ".pcx"; $("nameS").textContent = (n.S || "?") + ".pcx"; invalidate(); }
+
+  /* ---------- generate + download ---------- */
+  function setStatus(msg, kind) { const s = $("status"); s.textContent = msg; s.className = "status" + (kind ? " " + kind : ""); }
+  function invalidate() { if (generated) { generated = null; $("dl").disabled = true; $("files").hidden = true; setStatus("Framing changed. Generate again to update the files."); } }
+
+  async function buildFiles() {
+    const n = names(), files = [];
+    const want8 = $("fPcx8").checked, want24 = $("fPcx24").checked, wantPng = $("fPng").checked;
+    for (const k of ["L", "S"]) {
+      const r = renderFinal(k), base = n[k];
+      if (want8) { const q = quantize(r.rgb, 255, r.w, ditherAmt()); files.push({ name: `pcx-8bit/${base}.pcx`, data: pcx8(r.w, r.h, q.idx, q.pal) }); }
+      if (want24) files.push({ name: `experimental-h3-24bit/${base}.pcx`, data: h3pcx24(r.w, r.h, r.rgb) });
+      if (wantPng) files.push({ name: `png/${base}.png`, data: await canvasToPng(r.canvas) });
+    }
+    const readme = `HotA Portrait Forge output\n\nHero: ${sel.value === "custom" ? "custom" : HEROES[+sel.value][0]}\n${n.L}: large portrait 58x64\n${n.S}: small portrait 48x32\n\npcx-8bit:  256-colour PCX, palette entry 0 unused. Tested: works dropped into Heroes3\\Data.\npng:       lossless masters for editing or converting yourself.\nexperimental-h3-24bit (if included): true colour in the game's own .pcx layout.\n   UNTESTED. Same file names as pcx-8bit, so copying it overwrites the 8-bit files. Back them up first.\n`;
+    files.push({ name: "README.txt", data: new TextEncoder().encode(readme) });
+    return files;
+  }
+  window.__buildZipForTest = async () => zip(await buildFiles());
+
+  $("gen").addEventListener("click", async () => {
+    const n = names();
+    if (!n.L || !n.S) { setStatus("Enter both file names. For this hero they are not known yet, so take them from HotA.lod.", "err"); (n.L ? $("nameSmallIn") : $("nameLargeIn")).focus(); return; }
+    if (n.L === n.S) { setStatus("Large and small files need different names.", "err"); return; }
+    if (!$("fPcx8").checked && !$("fPcx24").checked && !$("fPng").checked) { setStatus("Pick at least one format.", "err"); return; }
+    generated = await buildFiles();
+    const tb = $("files").querySelector("tbody"); tb.textContent = "";
+    for (const f of generated) { const tr = document.createElement("tr"); const a = document.createElement("td"), b = document.createElement("td"); a.textContent = f.name; b.textContent = f.data.length.toLocaleString() + " B"; tr.append(a, b); tb.append(tr); }
+    $("files").hidden = false; $("dl").disabled = false;
+    setStatus(`${generated.length} files ready.`, "ok");
+  });
+
+  $("dl").addEventListener("click", async () => {
+    if (!generated) return;
+    const blob = zip(generated), filename = `hota-portrait-${heroLabel()}.zip`;
+    let downloads = null;
+    try { downloads = window.claude?.use ? await window.claude.use("downloads") : null; } catch (e) { downloads = null; }
+    if (downloads) {
+      try { await downloads.save({ filename, data: blob }); setStatus(`Saved ${filename}.`, "ok"); }
+      catch (e) {
+        if (e?.code === "declined") setStatus("Download cancelled.");
+        else if (e?.code === "rate_limited") setStatus("A save prompt is already open. Finish it, then try again.", "err");
+        else setStatus("Downloads are not available in this view. Open the page in a browser to save the ZIP.", "err");
+      }
+      return;
+    }
+    const url = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = url; a.download = filename; document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    setStatus(`Saving ${filename}…`, "ok");
+  });
+
+  /* ---------- loading images ---------- */
+  function loadFile(file) {
+    if (!file || !(file.type.startsWith("image/") || (!file.type && /\.(png|jpe?g|webp|gif|bmp)$/i.test(file.name || "")))) { setStatus("That file is not an image. Try a PNG or JPG.", "err"); return; }
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => {
+      const c = document.createElement("canvas"); c.width = im.naturalWidth; c.height = im.naturalHeight;
+      c.getContext("2d").drawImage(im, 0, 0); URL.revokeObjectURL(url);
+      const where = linked ? "" : (active === "L" ? " for the large portrait" : " for the small portrait");
+      setImage(c, file.name || "pasted image"); setStatus(`Loaded ${file.name || "image"} (${c.width}×${c.height})${where}.`);
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); setStatus("The browser could not read that image.", "err"); };
+    im.src = url;
+  }
+  function setImage(c, name) {
+    for (const k of (linked ? ["L", "S"] : [active])) { imgs[k] = c; srcNames[k] = name; crops[k] = defaultCrop(k); }
+    renderEditor(); updateSrcInfo(); schedulePreview();
+  }
+  function updateSrcInfo() {
+    const info = $("srcInfo"); info.textContent = "";
+    const line = (label, txt) => { const sp = document.createElement("span"), b = document.createElement("b"); b.textContent = label + ": "; sp.append(b, document.createTextNode(txt)); info.append(sp); };
+    if (linked || imgs.L === imgs.S) line("Both sizes", srcNames.L);
+    else { line("Large", srcNames.L); line("Small", srcNames.S); }
+    $("dropTitle").textContent = linked ? "Upload an image" : (active === "L" ? "Upload image for the large portrait" : "Upload image for the small portrait");
+  }
+  $("linked").addEventListener("change", e => {
+    linked = e.target.checked;
+    if (linked && imgs.L !== imgs.S) {
+      const other = active === "L" ? "S" : "L";
+      imgs[other] = imgs[active]; srcNames[other] = srcNames[active]; crops[other] = defaultCrop(other);
+      setStatus(`Both sizes now use ${srcNames[active]}.`);
+      schedulePreview();
+    } else if (!linked) setStatus("Pick Large or Small above, then upload the image for that size.");
+    updateSrcInfo();
+  });
+  $("file").addEventListener("change", e => { loadFile(e.target.files[0]); e.target.value = ""; });
+  $("selfie").addEventListener("change", e => { loadFile(e.target.files[0]); e.target.value = ""; });
+  function ditherAmt() { return +$("dither").value / 100; }
+  $("dither").addEventListener("input", () => { const v = +$("dither").value; $("ditherVal").textContent = v ? v + "%" : "Off"; schedulePreview(); });
+  const drop = $("drop");
+  ["dragenter", "dragover"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.add("over"); }));
+  ["dragleave", "drop"].forEach(t => drop.addEventListener(t, e => { e.preventDefault(); drop.classList.remove("over"); }));
+  drop.addEventListener("drop", e => loadFile(e.dataTransfer.files[0]));
+  document.addEventListener("paste", e => {
+    const items = [...(e.clipboardData?.items || [])], it = items.find(i => i.type.startsWith("image/"));
+    const fileFromList = [...(e.clipboardData?.files || [])].find(f => f.type.startsWith("image/"));
+    const f = it ? it.getAsFile() : fileFromList;
+    if (f) { e.preventDefault(); loadFile(f); $("pastebox").value = ""; $("pastebox").blur(); }
+    else if (e.target === $("pastebox")) { e.preventDefault(); setStatus("The clipboard has no image. Copy the picture itself, not a link to it.", "err"); }
+  });
+  $("pastebox").addEventListener("input", e => { e.target.value = ""; });
+
+  /* ---------- tabs, zoom, pan ---------- */
+  function setTab(k) { active = k; $("tabL").setAttribute("aria-pressed", k === "L"); $("tabS").setAttribute("aria-pressed", k === "S"); renderEditor(); updateSrcInfo(); }
+  $("tabL").onclick = () => setTab("L"); $("tabS").onclick = () => setTab("S");
+  $("reset").onclick = () => { crops[active] = defaultCrop(active); renderEditor(); schedulePreview(); };
+  $("frame").onchange = schedulePreview;
+  ["fPcx8", "fPcx24", "fPng"].forEach(id => $(id).onchange = invalidate);
+
+  function zoomAt(factor, ex, ey) { // ex,ey in editor canvas px
+    const c = crops[active], { W, H } = editorSize(active), b = baseZoom(active);
+    const nz = Math.min(b * 8, Math.max(b * 0.25, c.z * factor));
+    const sx = c.cx + (ex - W / 2) / c.z, sy = c.cy + (ey - H / 2) / c.z;
+    c.cx = sx - (ex - W / 2) / nz; c.cy = sy - (ey - H / 2) / nz; c.z = nz;
+    renderEditor(); schedulePreview();
+  }
+  $("zoom").addEventListener("input", e => {
+    const c = crops[active], target = baseZoom(active) * Math.pow(8, e.target.value / 1000);
+    const { W, H } = editorSize(active); zoomAt(target / c.z, W / 2, H / 2);
+  });
+  $("zoom").min = Math.round(Math.log(0.25) / Math.log(8) * 1000);
+  const toCanvas = (e) => { const r = editor.getBoundingClientRect(); return [(e.clientX - r.left) * editor.width / r.width, (e.clientY - r.top) * editor.height / r.height]; };
+  editor.addEventListener("wheel", e => { e.preventDefault(); const [x, y] = toCanvas(e); zoomAt(Math.exp(-e.deltaY * 0.0015), x, y); }, { passive: false });
+  const pointers = new Map(); let pinchDist = 0;
+  editor.addEventListener("pointerdown", e => { editor.setPointerCapture(e.pointerId); pointers.set(e.pointerId, toCanvas(e)); editor.classList.add("dragging"); if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinchDist = Math.hypot(a[0]-b[0], a[1]-b[1]); } });
+  editor.addEventListener("pointermove", e => {
+    if (!pointers.has(e.pointerId)) return;
+    const prev = pointers.get(e.pointerId), cur = toCanvas(e); pointers.set(e.pointerId, cur);
+    if (pointers.size === 1) { const c = crops[active]; c.cx -= (cur[0] - prev[0]) / c.z; c.cy -= (cur[1] - prev[1]) / c.z; renderEditor(); schedulePreview(); }
+    else if (pointers.size === 2) { const [a, b] = [...pointers.values()]; const d = Math.hypot(a[0]-b[0], a[1]-b[1]); if (pinchDist > 0) zoomAt(d / pinchDist, (a[0]+b[0])/2, (a[1]+b[1])/2); pinchDist = d; }
+  });
+  const up = e => { pointers.delete(e.pointerId); if (!pointers.size) editor.classList.remove("dragging"); pinchDist = 0; };
+  editor.addEventListener("pointerup", up); editor.addEventListener("pointercancel", up);
+  editor.addEventListener("keydown", e => {
+    const c = crops[active], step = SIZES[active].k / c.z * (e.shiftKey ? 5 : 1);
+    const m = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] }[e.key];
+    if (m) { e.preventDefault(); c.cx += m[0]; c.cy += m[1]; renderEditor(); schedulePreview(); }
+    else if (e.key === "+" || e.key === "=") { const { W, H } = editorSize(active); zoomAt(1.1, W/2, H/2); }
+    else if (e.key === "-") { const { W, H } = editorSize(active); zoomAt(1/1.1, W/2, H/2); }
+  });
+
+  fillHeroes(""); sel.value = "0"; pickHero();
+  setImage(sampleImage(), "sample image");
+  setStatus("Showing a sample. Upload your own image to start.");
+})();
+</script>
+
+</body></html>
