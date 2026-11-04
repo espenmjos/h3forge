@@ -9,6 +9,10 @@ the Google Fonts used by the page (it works without them, just with fallback fon
 
 ## Opening it
 
+**Online:** https://espenmjos.github.io/h3forge/ (works on PC and phone).
+
+Or offline:
+
 - **PC:** download `index.html` and double-click it, or open it in any modern browser
   (Chrome, Edge, Firefox).
 - **Phone:** open the file in the phone's browser. On a phone you also get a
