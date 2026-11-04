@@ -71,7 +71,8 @@ label.btn.selfie input { position: absolute; inset: 0; width: 100%; height: 100%
 #editor.dragging { cursor: grabbing; }
 .hint { font-size: 13px; color: var(--muted); margin: 0; }
 input[type=range] { width: 100%; accent-color: var(--gold); }
-.zoomrow { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
+.zoomrow { display: grid; grid-template-columns: auto 1fr 5ch; gap: 10px 12px; align-items: center; }
+.zoomrow .mono { text-align: right; }
 .previews { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .pv { display: grid; gap: 6px; justify-items: start; }
 .pv .frame { background: var(--well); padding: 8px; border-radius: 4px; display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
@@ -135,14 +136,22 @@ details ul { padding-left: 20px; margin: 6px 0; }
       <p class="hint pc-only">Want a selfie on a PC? This page can't use your webcam directly. Take a photo with the Windows Camera app (press the Windows key and type Camera), then upload it here. Or open this page on your phone and use the selfie button there.</p>
 
       <div class="stage">
-        <canvas id="editor" width="290" height="320" tabindex="0" aria-label="Crop area. Drag to move, scroll or pinch to zoom, arrow keys to nudge."></canvas>
+        <canvas id="editor" width="290" height="320" tabindex="0" aria-label="Crop area. Drag to move, scroll or pinch to zoom, arrow keys to nudge, Q and E to rotate."></canvas>
       </div>
       <div class="zoomrow">
         <span class="label">Zoom</span>
         <input type="range" id="zoom" min="0" max="1000" value="0" aria-label="Zoom">
         <span class="mono" id="zoomVal">1.00×</span>
+        <span class="label">Rotate</span>
+        <input type="range" id="rot" min="-180" max="180" step="1" value="0" aria-label="Rotate">
+        <span class="mono" id="rotVal">0°</span>
       </div>
-      <p class="hint">Drag to move. Scroll, pinch or use the slider to zoom. Arrow keys nudge by one game pixel. Each size is framed separately, so set both tabs.</p>
+      <div class="row">
+        <button type="button" id="rotCCW" aria-label="Rotate 90 degrees left">⟲ 90°</button>
+        <button type="button" id="rotCW" aria-label="Rotate 90 degrees right">⟳ 90°</button>
+        <button type="button" id="rot0">Straighten</button>
+      </div>
+      <p class="hint">Drag to move. Scroll, pinch or use the slider to zoom. Rotate with the slider, the 90° buttons, a two-finger twist, or the Q and E keys (Shift for 15°). Arrow keys nudge by one game pixel. Each size is framed separately, so set both tabs.</p>
     </section>
 
     <div style="display:grid;gap:24px;min-width:0">
@@ -250,23 +259,34 @@ details ul { padding-left: 20px; margin: 6px 0; }
     return c;
   }
 
-  /* ---------- crop model: z = editor px per source px, (cx,cy) = source point at frame centre ---------- */
+  /* ---------- crop model: z = editor px per source px, (cx,cy) = source point at frame centre,
+     a = rotation in degrees (clockwise) around the frame centre ---------- */
   function editorSize(k) { const s = SIZES[k]; return { W: s.w * s.k, H: s.h * s.k }; }
-  function baseZoom(k) { const { W, H } = editorSize(k); const im = imgs[k]; return Math.max(W / im.width, H / im.height); }
+  function baseZoom(k, a = crops[k] ? crops[k].a : 0) {
+    const { W, H } = editorSize(k), im = imgs[k], side = Math.abs(Math.round(a / 90)) % 2 === 1;
+    const iw = side ? im.height : im.width, ih = side ? im.width : im.height;
+    return Math.max(W / iw, H / ih);
+  }
   function defaultCrop(k) {
-    const z = baseZoom(k), img = imgs[k];
-    if (k === "L") return { z, cx: img.width / 2, cy: img.height / 2 };
+    const z = baseZoom(k, 0), img = imgs[k];
+    if (k === "L") return { z, cx: img.width / 2, cy: img.height / 2, a: 0 };
     const zz = z * 1.6; // small portrait: tighter, aimed at the upper part (face)
     const { H } = editorSize(k);
-    return { z: zz, cx: img.width / 2, cy: Math.max(H / 2 / zz, img.height * 0.4) };
+    return { z: zz, cx: img.width / 2, cy: Math.max(H / 2 / zz, img.height * 0.4), a: 0 };
+  }
+  // editor-pixel offset (dx,dy) -> source-pixel offset, undoing rotation and zoom
+  function toSrc(c, dx, dy) {
+    const t = c.a * Math.PI / 180, cs = Math.cos(t), sn = Math.sin(t);
+    return [(dx * cs + dy * sn) / c.z, (-dx * sn + dy * cs) / c.z];
   }
   function drawCrop(ctx, k, W, H) {
     const c = crops[k];
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = "#000"; ctx.fillRect(0, 0, W, H);
-    const f = W / editorSize(k).W;
+    const f = W / editorSize(k).W, t = c.a * Math.PI / 180;
+    const cs = Math.cos(t) * c.z * f, sn = Math.sin(t) * c.z * f;
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high";
-    ctx.setTransform(c.z * f, 0, 0, c.z * f, W / 2 - c.cx * c.z * f, H / 2 - c.cy * c.z * f);
+    ctx.setTransform(cs, sn, -sn, cs, W / 2 - (cs * c.cx - sn * c.cy), H / 2 - (sn * c.cx + cs * c.cy));
     ctx.drawImage(imgs[k], 0, 0);
     ctx.setTransform(1, 0, 0, 1, 0, 0);
   }
@@ -280,6 +300,8 @@ details ul { padding-left: 20px; margin: 6px 0; }
     const z = crops[active].z / baseZoom(active);
     $("zoom").value = Math.round(Math.log(z) / Math.log(8) * 1000);
     $("zoomVal").textContent = z.toFixed(2) + "×";
+    $("rot").value = Math.round(crops[active].a);
+    $("rotVal").textContent = Math.round(crops[active].a) + "°";
   }
 
   /* ---------- render to game size with stepwise downscale ---------- */
@@ -621,10 +643,31 @@ details ul { padding-left: 20px; margin: 6px 0; }
   function zoomAt(factor, ex, ey) { // ex,ey in editor canvas px
     const c = crops[active], { W, H } = editorSize(active), b = baseZoom(active);
     const nz = Math.min(b * 8, Math.max(b * 0.25, c.z * factor));
-    const sx = c.cx + (ex - W / 2) / c.z, sy = c.cy + (ey - H / 2) / c.z;
-    c.cx = sx - (ex - W / 2) / nz; c.cy = sy - (ey - H / 2) / nz; c.z = nz;
+    const [ux, uy] = toSrc(c, ex - W / 2, ey - H / 2);
+    c.cx += ux - ux * c.z / nz; c.cy += uy - uy * c.z / nz; c.z = nz;
     renderEditor(); schedulePreview();
   }
+  function pan(dx, dy) { // drag by (dx,dy) editor px
+    const c = crops[active], [ux, uy] = toSrc(c, dx, dy);
+    c.cx -= ux; c.cy -= uy; renderEditor(); schedulePreview();
+  }
+  function rotateAt(deg, ex, ey) { // set angle, keeping the source point under (ex,ey) in place
+    const c = crops[active], { W, H } = editorSize(active);
+    const [u0, v0] = toSrc(c, ex - W / 2, ey - H / 2);
+    c.a = ((deg % 360) + 360) % 360; if (c.a > 180) c.a -= 360;
+    const [u1, v1] = toSrc(c, ex - W / 2, ey - H / 2);
+    c.cx += u0 - u1; c.cy += v0 - v1;
+    renderEditor(); schedulePreview();
+  }
+  function quarterTurn(dir) { // keep the zoom level relative to the cover size of the turned image
+    const c = crops[active], { W, H } = editorSize(active), b0 = baseZoom(active);
+    rotateAt((Math.round(c.a / 90) + dir) * 90, W / 2, H / 2);
+    c.z *= baseZoom(active) / b0; renderEditor(); schedulePreview();
+  }
+  $("rot").addEventListener("input", e => { const { W, H } = editorSize(active); rotateAt(+e.target.value, W / 2, H / 2); });
+  $("rotCCW").onclick = () => quarterTurn(-1);
+  $("rotCW").onclick = () => quarterTurn(1);
+  $("rot0").onclick = () => { const { W, H } = editorSize(active); rotateAt(0, W / 2, H / 2); };
   $("zoom").addEventListener("input", e => {
     const c = crops[active], target = baseZoom(active) * Math.pow(8, e.target.value / 1000);
     const { W, H } = editorSize(active); zoomAt(target / c.z, W / 2, H / 2);
@@ -632,22 +675,31 @@ details ul { padding-left: 20px; margin: 6px 0; }
   $("zoom").min = Math.round(Math.log(0.25) / Math.log(8) * 1000);
   const toCanvas = (e) => { const r = editor.getBoundingClientRect(); return [(e.clientX - r.left) * editor.width / r.width, (e.clientY - r.top) * editor.height / r.height]; };
   editor.addEventListener("wheel", e => { e.preventDefault(); const [x, y] = toCanvas(e); zoomAt(Math.exp(-e.deltaY * 0.0015), x, y); }, { passive: false });
-  const pointers = new Map(); let pinchDist = 0;
-  editor.addEventListener("pointerdown", e => { editor.setPointerCapture(e.pointerId); pointers.set(e.pointerId, toCanvas(e)); editor.classList.add("dragging"); if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinchDist = Math.hypot(a[0]-b[0], a[1]-b[1]); } });
+  const pointers = new Map(); let pinchDist = 0, pinchAng = 0, twist = 0, twisting = false;
+  editor.addEventListener("pointerdown", e => { editor.setPointerCapture(e.pointerId); pointers.set(e.pointerId, toCanvas(e)); editor.classList.add("dragging"); if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinchDist = Math.hypot(a[0]-b[0], a[1]-b[1]); pinchAng = Math.atan2(b[1]-a[1], b[0]-a[0]); twist = 0; twisting = false; } });
   editor.addEventListener("pointermove", e => {
     if (!pointers.has(e.pointerId)) return;
     const prev = pointers.get(e.pointerId), cur = toCanvas(e); pointers.set(e.pointerId, cur);
-    if (pointers.size === 1) { const c = crops[active]; c.cx -= (cur[0] - prev[0]) / c.z; c.cy -= (cur[1] - prev[1]) / c.z; renderEditor(); schedulePreview(); }
-    else if (pointers.size === 2) { const [a, b] = [...pointers.values()]; const d = Math.hypot(a[0]-b[0], a[1]-b[1]); if (pinchDist > 0) zoomAt(d / pinchDist, (a[0]+b[0])/2, (a[1]+b[1])/2); pinchDist = d; }
+    if (pointers.size === 1) pan(cur[0] - prev[0], cur[1] - prev[1]);
+    else if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()], mx = (a[0]+b[0])/2, my = (a[1]+b[1])/2;
+      const d = Math.hypot(a[0]-b[0], a[1]-b[1]); if (pinchDist > 0) zoomAt(d / pinchDist, mx, my); pinchDist = d;
+      // twist to rotate; a small dead zone keeps plain pinch-zooms from tilting the picture
+      const ang = Math.atan2(b[1]-a[1], b[0]-a[0]); let da = (ang - pinchAng) * 180 / Math.PI; pinchAng = ang;
+      da = ((da + 540) % 360) - 180;
+      if (!twisting) { twist += da; if (Math.abs(twist) > 10) { twisting = true; da = twist; } else da = 0; }
+      if (da) rotateAt(crops[active].a + da, mx, my);
+    }
   });
   const up = e => { pointers.delete(e.pointerId); if (!pointers.size) editor.classList.remove("dragging"); pinchDist = 0; };
   editor.addEventListener("pointerup", up); editor.addEventListener("pointercancel", up);
   editor.addEventListener("keydown", e => {
-    const c = crops[active], step = SIZES[active].k / c.z * (e.shiftKey ? 5 : 1);
-    const m = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] }[e.key];
-    if (m) { e.preventDefault(); c.cx += m[0]; c.cy += m[1]; renderEditor(); schedulePreview(); }
-    else if (e.key === "+" || e.key === "=") { const { W, H } = editorSize(active); zoomAt(1.1, W/2, H/2); }
-    else if (e.key === "-") { const { W, H } = editorSize(active); zoomAt(1/1.1, W/2, H/2); }
+    const px = SIZES[active].k * (e.shiftKey ? 5 : 1), { W, H } = editorSize(active);
+    const m = { ArrowLeft: [-px, 0], ArrowRight: [px, 0], ArrowUp: [0, -px], ArrowDown: [0, px] }[e.key];
+    if (m) { e.preventDefault(); pan(m[0], m[1]); }
+    else if (/^[qe]$/i.test(e.key)) { e.preventDefault(); rotateAt(crops[active].a + (e.key.toLowerCase() === "e" ? 1 : -1) * (e.shiftKey ? 15 : 1), W/2, H/2); }
+    else if (e.key === "+" || e.key === "=") zoomAt(1.1, W/2, H/2);
+    else if (e.key === "-") zoomAt(1/1.1, W/2, H/2);
   });
 
   fillHeroes(""); sel.value = "0"; pickHero();

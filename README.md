@@ -14,6 +14,7 @@ Frame the image, check it at real game size, and download portrait files the gam
 
 - **Large and small portraits**: 58×64 for the hero screen and 48×32 for the adventure-map hero bar,
   each framed separately.
+- **Move, zoom and rotate** the picture freely, including quarter turns for sideways photos.
 - **True in-game preview**: see the 256-colour result at 1× and 2× before you export.
 - **Optional dithering** for smoother gradients on photos.
 - **Full HotA 1.8.1 hero list**, including Cove, Factory and Bulwark, with the correct file names
@@ -51,7 +52,12 @@ framing, so set both.
 | --- | --- | --- |
 | Move | Drag | Arrow keys (one game pixel) |
 | Zoom | Scroll, pinch or the **Zoom** slider | `+` / `-` |
+| Rotate | **Rotate** slider, two-finger twist, or the **⟲ 90°** / **⟳ 90°** buttons | `Q` / `E` (1°, with Shift 15°) |
+| Undo rotation | **Straighten** | |
 | Start over | **Reset framing** | |
+
+When you rotate by an angle that is not a quarter turn, the corners of the frame can show black.
+Zoom in a little until the picture fills the frame.
 
 **Use the same image for both sizes** is on by default. Turn it off to use a different picture
 for the small portrait, for example a tighter crop of the face.
